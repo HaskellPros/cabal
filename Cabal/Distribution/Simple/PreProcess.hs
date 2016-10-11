@@ -369,6 +369,7 @@ ppHsc2hs bi lbi =
     platformIndependent = False,
     runPreProcessor = mkSimplePreProcessor $ \inFile outFile verbosity -> do
       (gccProg, _) <- requireProgram verbosity gccProgram (withPrograms lbi)
+      let nubbedIncludeDirs = ordNub $ PD.includeDirs bi ++ [ dir | pkg <- pkgs, dir <- Installed.includeDirs pkg ]
       rawSystemProgramConf verbosity hsc2hsProgram (withPrograms lbi) $
           [ "--cc=" ++ programPath gccProg
           , "--ld=" ++ programPath gccProg ]
@@ -397,7 +398,7 @@ ppHsc2hs bi lbi =
        ++ [ "--cflag="   ++ opt | opt <- platformDefines lbi ]
 
           -- Options from the current package:
-       ++ [ "--cflag=-I" ++ dir | dir <- PD.includeDirs  bi ]
+       ++ [ "--cflag=-I" ++ dir | dir <- nubbedIncludeDirs ]
        ++ [ "--cflag="   ++ opt | opt <- PD.ccOptions    bi
                                       ++ PD.cppOptions   bi ]
        ++ [ "--cflag="   ++ opt | opt <-
@@ -412,8 +413,7 @@ ppHsc2hs bi lbi =
           -- Options from dependent packages
        ++ [ "--cflag=" ++ opt
           | pkg <- pkgs
-          , opt <- [ "-I" ++ opt | opt <- Installed.includeDirs pkg ]
-                ++ [         opt | opt <- Installed.ccOptions   pkg ] ]
+          , opt <- [ opt | opt <- Installed.ccOptions   pkg ] ]
        ++ [ "--lflag=" ++ opt
           | pkg <- pkgs
           , opt <- [ "-L" ++ opt | opt <- Installed.libraryDirs    pkg ]
@@ -472,7 +472,7 @@ ppC2hs bi lbi =
           -- Options from dependent packages
        ++ [ "--cppopts=" ++ ordNub opt
           | pkg <- pkgs
-          , opt <- [ "-I" ++ opt | opt <- Installed.includeDirs pkg ]
+          , opt <- [ "-I" ++ opt | opt <- ordNub $ Installed.includeDirs pkg ]
                 ++ [         opt | opt@('-':c:_) <- Installed.ccOptions pkg
                                  , c `elem` "DIU" ] ]
           --TODO: install .chi files for packages, so we can --include
