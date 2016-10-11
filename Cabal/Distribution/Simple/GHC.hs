@@ -1100,7 +1100,7 @@ installExe verbosity lbi installDirs buildPref
   (progprefix, progsuffix) _pkg exe = do
   let binDir = bindir installDirs
   createDirectoryIfMissingVerbose verbosity True binDir
-  let exeFileName = exeFileName = exeName exe <.>
+  let exeFileName = exeName exe <.>
         ( if (takeExtension (exeName exe) /= ('.':exeExtension) && takeExtension (exeName exe) /= ('.':dllExtension))
             then exeExtension
             else "" )
