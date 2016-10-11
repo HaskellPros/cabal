@@ -1115,7 +1115,7 @@ installExe verbosity lbi installDirs buildPref
             (dest <.> exeExtension)
           when (stripExes lbi) $
             Strip.stripExe verbosity (hostPlatform lbi) (withPrograms lbi)
-                           (dest <.> exeExtension)
+                           (dest)
   installBinary (binDir </> fixedExeBaseNameWithExtension)
 
 -- |Install for ghc, .hi, .a and, if --with-ghci given, .o
