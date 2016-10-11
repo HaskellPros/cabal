@@ -470,7 +470,7 @@ ppC2hs bi lbi =
         ++ [ "--include=" ++ outBaseDir ]
 
           -- Options from dependent packages
-       ++ [ "--cppopts=" ++ opt
+       ++ [ "--cppopts=" ++ ordNub opt
           | pkg <- pkgs
           , opt <- [ "-I" ++ opt | opt <- Installed.includeDirs pkg ]
                 ++ [         opt | opt@('-':c:_) <- Installed.ccOptions pkg
@@ -496,7 +496,7 @@ getCppOptions :: BuildInfo -> LocalBuildInfo -> [String]
 getCppOptions bi lbi
     = platformDefines lbi
    ++ cppOptions bi
-   ++ ["-I" ++ dir | dir <- PD.includeDirs bi]
+   ++ ["-I" ++ dir | dir <- ordNub $ PD.includeDirs bi]
    ++ [opt | opt@('-':c:_) <- PD.ccOptions bi, c `elem` "DIU"]
 
 platformDefines :: LocalBuildInfo -> [String]
