@@ -785,7 +785,7 @@ buildOrReplExe forRepl verbosity numJobs _pkg_descr lbi
 
   -- exeNameReal, the name that GHC really uses (with .exe on Windows)
   let exeNameReal = exeName' <.>
-                    (if takeExtension exeName' /= ('.':exeExtension)
+                    (if takeExtension exeName' /= ('.':exeExtension) && takeExtension exeName' /= ('.':dllExtension)
                        then exeExtension
                        else "")
 
@@ -1100,8 +1100,15 @@ installExe verbosity lbi installDirs buildPref
   (progprefix, progsuffix) _pkg exe = do
   let binDir = bindir installDirs
   createDirectoryIfMissingVerbose verbosity True binDir
-  let exeFileName = exeName exe <.> exeExtension
+  let exeFileName = exeFileName = exeName exe <.>
+        ( if (takeExtension (exeName exe) /= ('.':exeExtension) && takeExtension (exeName exe) /= ('.':dllExtension))
+            then exeExtension
+            else "" )
       fixedExeBaseName = progprefix ++ exeName exe ++ progsuffix
+      fixedExeBaseNameWithExtension = fixedExeBaseName <.>
+        ( if (takeExtension fixedExeBaseName /= ('.':exeExtension) && takeExtension fixedExeBaseName /= ('.':dllExtension))
+            then exeExtension
+            else "" )
       installBinary dest = do
           installExecutableFile verbosity
             (buildPref </> exeName exe </> exeFileName)
@@ -1109,7 +1116,7 @@ installExe verbosity lbi installDirs buildPref
           when (stripExes lbi) $
             Strip.stripExe verbosity (hostPlatform lbi) (withPrograms lbi)
                            (dest <.> exeExtension)
-  installBinary (binDir </> fixedExeBaseName)
+  installBinary (binDir </> fixedExeBaseNameWithExtension)
 
 -- |Install for ghc, .hi, .a and, if --with-ghci given, .o
 installLib    :: Verbosity
