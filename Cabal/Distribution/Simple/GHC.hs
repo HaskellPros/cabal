@@ -1112,7 +1112,7 @@ installExe verbosity lbi installDirs buildPref
       installBinary dest = do
           installExecutableFile verbosity
             (buildPref </> exeName exe </> exeFileName)
-            (dest <.> exeExtension)
+            (dest)
           when (stripExes lbi) $
             Strip.stripExe verbosity (hostPlatform lbi) (withPrograms lbi)
                            (dest)
