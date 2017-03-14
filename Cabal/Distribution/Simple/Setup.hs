@@ -39,6 +39,7 @@ module Distribution.Simple.Setup (
   configAbsolutePaths, readPackageDbList, showPackageDbList,
   CopyFlags(..),     emptyCopyFlags,     defaultCopyFlags,     copyCommand,
   InstallFlags(..),  emptyInstallFlags,  defaultInstallFlags,  installCommand,
+  HaddockTarget(..), haddockTargetFromFlag,
   HaddockFlags(..),  emptyHaddockFlags,  defaultHaddockFlags,  haddockCommand,
   HscolourFlags(..), emptyHscolourFlags, defaultHscolourFlags, hscolourCommand,
   BuildFlags(..),    emptyBuildFlags,    defaultBuildFlags,    buildCommand,
@@ -766,6 +767,11 @@ installDirsOptions =
       libsubdir (\v flags -> flags { libsubdir = v })
       installDirArg
 
+  , option "" ["dynlibdir"]
+      "installation directory for dynamic libraries"
+      dynlibdir (\v flags -> flags { dynlibdir = v })
+      installDirArg
+
   , option "" ["libexecdir"]
       "installation directory for program executables"
       libexecdir (\v flags -> flags { libexecdir = v })
@@ -1208,6 +1214,26 @@ hscolourCommand = CommandUI
 -- ------------------------------------------------------------
 -- * Haddock flags
 -- ------------------------------------------------------------
+
+
+-- | When we build haddock documentation, there are two cases:
+--
+-- 1. We build haddocks only for the current development version,
+--    intended for local use and not for distribution. In this case,
+--    we store the generated documentation in @<dist>/doc/html/<package name>@.
+--
+-- 2. We build haddocks for intended for uploading them to hackage.
+--    In this case, we need to follow the layout that hackage expects
+--    from documentation tarballs, and we might also want to use different
+--    flags than for development builds, so in this case we store the generated
+--    documentation in @<dist>/doc/html/<package id>-docs@.
+data HaddockTarget = ForHackage | ForDevelopment deriving (Eq, Show, Generic)
+
+-- | Convert '--for-hackage' to 'HaddockTarget'.
+haddockTargetFromFlag :: Flag Bool -> HaddockTarget
+haddockTargetFromFlag NoFlag       = ForDevelopment
+haddockTargetFromFlag (Flag False) = ForDevelopment
+haddockTargetFromFlag (Flag True)  = ForHackage
 
 data HaddockFlags = HaddockFlags {
     haddockProgramPaths :: [(String, FilePath)],

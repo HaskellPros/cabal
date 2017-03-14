@@ -1,4 +1,17 @@
 -*-change-log-*-
+1.24.2.0 Mikhail Glushenkov <mikhail.glushenkov@gmail.com> December 2016
+	* Fixed a bug in the handling of non-buildable components (#4094).
+	* Reverted a PVP-noncompliant API change in 1.24.1.0 (#4123).
+	* Bumped the directory upper bound to < 1.4 (#4158).
+
+1.24.1.0 Ryan Thomas <ryan@ryant.org> October 2016
+	* API addition: 'differenceVersionRanges' (#3519).
+	* Fixed reexported-modules display mangling (#3928).
+	* Check that the correct cabal-version is specified when the
+	extra-doc-files field is present (#3825).
+	* Fixed an incorrect invocation of GetShortPathName that was
+	causing build failures on Windows (#3649).
+	* Linker flags are now set correctly on GHC >= 7.8 (#3443).
 
 1.24.0.0 Ryan Thomas <ryan@ryant.org> May 2016
 	* Support GHC 8.

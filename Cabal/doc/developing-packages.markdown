@@ -1317,9 +1317,9 @@ for these fields.
 
     It is only syntactic sugar. It is exactly equivalent to `foo >= 1.2 && < 1.3`.
 
-    Note: Prior to Cabal 1.8, build-depends specified in each section
+    Note: Prior to Cabal 1.8, `build-depends` specified in each section
     were global to all sections. This was unintentional, but some packages
-    were written to depend on it, so if you need your build-depends to
+    were written to depend on it, so if you need your `build-depends` to
     be local to each section, you must specify at least
     `Cabal-Version: >= 1.8` in your `.cabal` file.
 
@@ -1899,6 +1899,22 @@ The `get` command supports the following options:
 :   Fork the package's source repository using the appropriate version control
     system. The optional argument allows to choose a specific repository kind.
 
+## Custom setup scripts
+
+The optional `custom-setup` stanza contains information needed for the
+compilation of custom `Setup.hs` scripts,
+
+~~~~~~~~~~~~~~~~
+custom-setup
+  setup-depends:
+    base >= 4.5 && < 4.11,
+    Cabal < 1.25
+~~~~~~~~~~~~~~~~
+
+`setup-depends:` _package list_
+:   The dependencies needed to compile `Setup.hs`. See the
+    [`build-depends`](#build-information) section for a description of the
+    syntax expected by this field.
 
 ## Accessing data files from package code ##
 
@@ -1936,6 +1952,7 @@ version :: Version
 
 getBinDir :: IO FilePath
 getLibDir :: IO FilePath
+getDynLibDir :: IO FilePath
 getDataDir :: IO FilePath
 getLibexecDir :: IO FilePath
 getSysconfDir :: IO FilePath
@@ -2148,6 +2165,10 @@ a few options:
     details, but note that this interface is experimental, and likely
     to change in future releases.
 
+    If you use a custom `Setup.hs` file you should strongly consider adding a
+    `custom-setup` stanza with a `setup-depends` field to ensure that your
+    setup script does not break with future dependency versions.
+
   * You could delegate all the work to `make`, though this is unlikely
     to be very portable. Cabal supports this with the `build-type`
     `Make` and a trivial setup library [Distribution.Make][dist-make],
@@ -2165,7 +2186,7 @@ a few options:
     `unregister`, `clean`, `dist` and `docs`. Some options to commands
     are passed through as follows:
 
-      * The `--with-hc-pkg`, `--prefix`, `--bindir`, `--libdir`, `--datadir`,
+      * The `--with-hc-pkg`, `--prefix`, `--bindir`, `--libdir`, `--dynlibdir`, `--datadir`,
         `--libexecdir` and `--sysconfdir` options to the `configure` command are
         passed on to the `configure` script. In addition the value of the
         `--with-compiler` option is passed in a `--with-hc` option and all
@@ -2181,6 +2202,7 @@ a few options:
                 $(MAKE) install prefix=$(destdir)/$(prefix) \
                                 bindir=$(destdir)/$(bindir) \
                                 libdir=$(destdir)/$(libdir) \
+                                dynlibdir=$(destdir)/$(dynlibdir) \
                                 datadir=$(destdir)/$(datadir) \
                                 libexecdir=$(destdir)/$(libexecdir) \
                                 sysconfdir=$(destdir)/$(sysconfdir) \

@@ -1,6 +1,28 @@
 -*-change-log-*-
+1.24.0.2 Mikhail Glushenkov <mikhail.glushenkov@gmail.com> December 2016
+	* Adapted to the revert of a PVP-noncompliant API change in
+	Cabal 1.24.2.0 (#4123).
+	* Bumped the directory upper bound to < 1.4 (#4158).
 
-1.24.0.0 Ryan Thomas <ryan@ryant.org> March 2016
+1.24.0.1 Ryan Thomas <ryan@ryant.org> October 2016
+	* Fixed issue with passing '--enable-profiling' when invoking
+	Setup scripts built with older versions of Cabal (#3873).
+	* Fixed various behaviour differences between network transports
+	(#3429).
+	* Updated to depend on the latest hackage-security that fixes
+	various issues on Windows.
+	* Fixed 'new-build' to exit with a non-zero exit code on failure
+	(#3506).
+	* Store secure repo index data as 01-index.* (#3862).
+	* Added new hackage-security root keys for distribution with
+	cabal-install.
+	* Fix an issue where 'cabal install' sometimes had to be run twice
+	for packages with build-type: Custom and a custom-setup stanza
+	(#3723).
+	* 'cabal sdist' no longer ignores '--builddir' when the package's
+	build-type is Custom (#3794).
+
+1.24.0.0 Ryan Thomas <ryan@ryant.org> May 2016
 	* If there are multiple remote repos, 'cabal update' now updates
 	them in parallel (#2503).
 	* New 'cabal upload' option '-P'/'--password-command' for reading
@@ -54,6 +76,7 @@
 	(#3171).
 	* Improved performance of '--reorder-goals' (#3208).
 	* Fixed space leaks in modular solver (#2916, #2914).
+	* Made the solver aware of pkg-config constraints (#3023).
 	* Added a new command: 'gen-bounds' (#3223). See
 	http://softwaresimply.blogspot.se/2015/08/cabal-gen-bounds-easy-generation-of.html.
 	* Tech preview of new nix-style isolated project-based builds.

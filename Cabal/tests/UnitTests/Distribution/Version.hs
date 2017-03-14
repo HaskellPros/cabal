@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# OPTIONS_GHC -fno-warn-orphans
                 -fno-warn-incomplete-patterns
                 -fno-warn-deprecations
@@ -12,8 +13,11 @@ import Text.PrettyPrint as Disp (text, render, parens, hcat
 
 import Test.Tasty
 import Test.Tasty.QuickCheck
-import Test.QuickCheck.Utils
 import qualified Test.Laws as Laws
+
+#if !MIN_VERSION_QuickCheck(2,9,0)
+import Test.QuickCheck.Utils
+#endif
 
 import Control.Monad (liftM, liftM2)
 import Data.Maybe (isJust, fromJust)
@@ -41,6 +45,7 @@ versionTests =
   , property prop_orEarlierVersion
   , property prop_unionVersionRanges
   , property prop_intersectVersionRanges
+  , property prop_differenceVersionRanges
   , property prop_invertVersionRange
   , property prop_withinVersion
   , property prop_foldVersionRange
@@ -99,6 +104,7 @@ versionTests =
 --     -- , property prop_parse_disp5
 --   ]
 
+#if !MIN_VERSION_QuickCheck(2,9,0)
 instance Arbitrary Version where
   arbitrary = do
     branch <- smallListOf1 $
@@ -114,6 +120,7 @@ instance Arbitrary Version where
     [ Version branch' [] | branch' <- shrink branch, not (null branch') ]
   shrink (Version branch _tags) =
     [ Version branch [] ]
+#endif
 
 instance Arbitrary VersionRange where
   arbitrary = sized verRangeExp
@@ -195,6 +202,11 @@ prop_intersectVersionRanges :: VersionRange -> VersionRange -> Version -> Bool
 prop_intersectVersionRanges vr1 vr2 v' =
      withinRange v' (intersectVersionRanges vr1 vr2)
   == (withinRange v' vr1 && withinRange v' vr2)
+
+prop_differenceVersionRanges :: VersionRange -> VersionRange -> Version -> Bool
+prop_differenceVersionRanges vr1 vr2 v' =
+     withinRange v' (differenceVersionRanges vr1 vr2)
+  == (withinRange v' vr1 && not (withinRange v' vr2))
 
 prop_invertVersionRange :: VersionRange -> Version -> Bool
 prop_invertVersionRange vr v' =

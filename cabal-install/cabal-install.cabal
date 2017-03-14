@@ -1,5 +1,5 @@
 Name:               cabal-install
-Version:            1.24.0.0
+Version:            1.24.0.2
 Synopsis:           The command-line interface for Cabal and Hackage.
 Description:
     The \'cabal\' command-line program simplifies the process of managing
@@ -30,6 +30,20 @@ Extra-Source-Files:
   -- Generated with '../Cabal/misc/gen-extra-source-files.sh'
   -- Do NOT edit this section manually; instead, run the script.
   -- BEGIN gen-extra-source-files
+  tests/IntegrationTests/custom-setup/common.sh
+  tests/IntegrationTests/custom-setup/should_run/Cabal-99998/Cabal.cabal
+  tests/IntegrationTests/custom-setup/should_run/Cabal-99998/CabalMessage.hs
+  tests/IntegrationTests/custom-setup/should_run/Cabal-99999/Cabal.cabal
+  tests/IntegrationTests/custom-setup/should_run/Cabal-99999/CabalMessage.hs
+  tests/IntegrationTests/custom-setup/should_run/custom-setup-without-cabal-defaultMain/Setup.hs
+  tests/IntegrationTests/custom-setup/should_run/custom-setup-without-cabal-defaultMain/custom-setup-without-cabal-defaultMain.cabal
+  tests/IntegrationTests/custom-setup/should_run/custom-setup-without-cabal/Setup.hs
+  tests/IntegrationTests/custom-setup/should_run/custom-setup-without-cabal/custom-setup-without-cabal.cabal
+  tests/IntegrationTests/custom-setup/should_run/custom-setup/Setup.hs
+  tests/IntegrationTests/custom-setup/should_run/custom-setup/custom-setup.cabal
+  tests/IntegrationTests/custom-setup/should_run/custom_setup_without_Cabal_doesnt_allow_Cabal_import.sh
+  tests/IntegrationTests/custom-setup/should_run/custom_setup_without_Cabal_doesnt_require_Cabal.sh
+  tests/IntegrationTests/custom-setup/should_run/installs_Cabal_as_setup_dep.sh
   tests/IntegrationTests/custom/common.sh
   tests/IntegrationTests/custom/should_run/plain.err
   tests/IntegrationTests/custom/should_run/plain.sh
@@ -251,7 +265,7 @@ executable cabal
         base16-bytestring >= 0.1.1 && < 0.2,
         binary     >= 0.5      && < 0.9,
         bytestring >= 0.9      && < 1,
-        Cabal      >= 1.24     && < 1.25,
+        Cabal      >= 1.24.2 && < 1.25,
         containers >= 0.4      && < 0.6,
         cryptohash-sha256 >= 0.11 && < 0.12,
         filepath   >= 1.3      && < 1.5,
@@ -261,10 +275,10 @@ executable cabal
         pretty     >= 1.1      && < 1.2,
         random     >= 1        && < 1.2,
         stm        >= 2.0      && < 3,
-        tar        >= 0.5.0.1  && < 0.6,
-        time       >= 1.4      && < 1.7,
+        tar        >= 0.5.0.3  && < 0.6,
+        time       >= 1.4      && < 1.8,
         zlib       >= 0.5.3    && < 0.7,
-        hackage-security >= 0.5.1 && < 0.6
+        hackage-security >= 0.5.2.2 && < 0.6
 
     if flag(old-bytestring)
       build-depends: bytestring <  0.10.2, bytestring-builder >= 0.10 && < 1
@@ -275,7 +289,7 @@ executable cabal
       build-depends: directory >= 1.1 && < 1.2, old-time >= 1 && < 1.2,
                      process   >= 1.0.1.1  && < 1.1.0.2
     else
-      build-depends: directory >= 1.2 && < 1.3,
+      build-depends: directory >= 1.2 && < 1.4,
                      process   >= 1.1.0.2  && < 1.5
 
     -- NOTE: you MUST include the network dependency even when network-uri
@@ -400,5 +414,5 @@ test-suite integration-tests
   else
     ghc-options: -threaded
 
-  ghc-options: -Wall
+  ghc-options: -Wall -fwarn-tabs -fno-ignore-asserts
   default-language: Haskell2010

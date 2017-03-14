@@ -73,6 +73,7 @@ import Distribution.Simple.Program
          ( defaultProgramConfiguration )
 import Distribution.Simple.Command hiding (boolOpt, boolOpt')
 import qualified Distribution.Simple.Command as Command
+import Distribution.Simple.Configure ( computeEffectiveProfiling )
 import qualified Distribution.Simple.Setup as Cabal
 import Distribution.Simple.Setup
          ( ConfigFlags(..), BuildFlags(..), ReplFlags
@@ -83,7 +84,7 @@ import Distribution.Simple.Setup
          , optionVerbosity, boolOpt, boolOpt', trueArg, falseArg
          , readPToMaybe, optionNumJobs )
 import Distribution.Simple.InstallDirs
-         ( PathTemplate, InstallDirs(sysconfdir)
+         ( PathTemplate, InstallDirs(dynlibdir, sysconfdir)
          , toPathTemplate, fromPathTemplate )
 import Distribution.Version
          ( Version(Version), anyVersion, thisVersion )
@@ -349,7 +350,7 @@ configureOptions = commandOptions configureCommand
 
 filterConfigureFlags :: ConfigFlags -> Version -> ConfigFlags
 filterConfigureFlags flags cabalLibVersion
-  | cabalLibVersion >= Version [1,23,0] [] = flags_latest
+  | cabalLibVersion >= Version [1,24,1] [] = flags_latest
   -- ^ NB: we expect the latest version to be the most common case.
   | cabalLibVersion <  Version [1,3,10] [] = flags_1_3_10
   | cabalLibVersion <  Version [1,10,0] [] = flags_1_10_0
@@ -361,8 +362,10 @@ filterConfigureFlags flags cabalLibVersion
   | cabalLibVersion <  Version [1,21,1] [] = flags_1_20_0
   | cabalLibVersion <  Version [1,22,0] [] = flags_1_21_0
   | cabalLibVersion <  Version [1,23,0] [] = flags_1_22_0
+  | cabalLibVersion <  Version [1,24,1] [] = flags_1_24_0
   | otherwise = flags_latest
   where
+    (profEnabledLib, profEnabledExe) = computeEffectiveProfiling flags
     flags_latest = flags        {
       -- Cabal >= 1.19.1 uses '--dependency' and does not need '--constraint'.
       configConstraints = [],
@@ -371,22 +374,29 @@ filterConfigureFlags flags cabalLibVersion
       configAllowNewer  = Just Cabal.AllowNewerNone
       }
 
+    -- Cabal < 1.24.1 doesn't know about --dynlibdir.
+    flags_1_24_0 = flags_latest { configInstallDirs = configInstallDirs_1_24_0}
+    configInstallDirs_1_24_0 = (configInstallDirs flags) { dynlibdir = NoFlag }
+
     -- Cabal < 1.23 doesn't know about '--profiling-detail'.
-    flags_1_22_0 = flags_latest { configProfDetail    = NoFlag
+    -- Cabal < 1.23 has a hacked up version of 'enable-profiling'
+    -- which we shouldn't use.
+    flags_1_22_0 = flags_1_24_0 { configProfDetail    = NoFlag
                                 , configProfLibDetail = NoFlag
-                                , configIPID          = NoFlag }
+                                , configIPID          = NoFlag
+                                , configProf          = NoFlag
+                                , configProfExe       = Flag profEnabledExe
+                                , configProfLib       = Flag profEnabledLib
+                                }
 
     -- Cabal < 1.22 doesn't know about '--disable-debug-info'.
     flags_1_21_0 = flags_1_22_0 { configDebugInfo = NoFlag }
 
     -- Cabal < 1.21.1 doesn't know about 'disable-relocatable'
     -- Cabal < 1.21.1 doesn't know about 'enable-profiling'
+    -- (but we already dealt with it in flags_1_22_0)
     flags_1_20_0 =
       flags_1_21_0 { configRelocatable = NoFlag
-                   , configProf = NoFlag
-                   , configProfExe = configProf flags
-                   , configProfLib =
-                     mappend (configProf flags) (configProfLib flags)
                    , configCoverage = NoFlag
                    , configLibCoverage = configCoverage flags
                    }
@@ -400,7 +410,7 @@ filterConfigureFlags flags cabalLibVersion
     -- Cabal < 1.18.0 doesn't know about --extra-prog-path and --sysconfdir.
     flags_1_18_0 = flags_1_19_0 { configProgramPathExtra = toNubList []
                                 , configInstallDirs = configInstallDirs_1_18_0}
-    configInstallDirs_1_18_0 = (configInstallDirs flags) { sysconfdir = NoFlag }
+    configInstallDirs_1_18_0 = (configInstallDirs flags_1_19_0) { sysconfdir = NoFlag }
     -- Cabal < 1.14.0 doesn't know about '--disable-benchmarks'.
     flags_1_14_0 = flags_1_18_0 { configBenchmarks  = NoFlag }
     -- Cabal < 1.12.0 doesn't know about '--enable/disable-executable-dynamic'

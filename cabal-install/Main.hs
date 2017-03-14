@@ -179,7 +179,8 @@ import Data.Maybe               (listToMaybe)
 import Data.Monoid              (Monoid(..))
 import Control.Applicative      (pure, (<$>))
 #endif
-import Control.Monad            (when, unless)
+import Control.Exception        (SomeException(..), try)
+import Control.Monad            (when, unless, void)
 
 -- | Entry point
 --
@@ -311,7 +312,8 @@ wrapperAction command verbosityFlag distPrefFlag =
   commandAddAction command
     { commandDefaultFlags = mempty } $ \flags extraArgs globalFlags -> do
     let verbosity = fromFlagOrDefault normal (verbosityFlag flags)
-    (_, config) <- loadConfigOrSandboxConfig verbosity globalFlags
+    load <- try (loadConfigOrSandboxConfig verbosity globalFlags)
+    let config = either (\(SomeException _) -> mempty) snd load
     distPref <- findSavedDistPref config (distPrefFlag flags)
     let setupScriptOptions = defaultSetupScriptOptions { useDistPref = distPref }
     setupWrapper verbosity setupScriptOptions Nothing
@@ -695,7 +697,8 @@ installAction :: (ConfigFlags, ConfigExFlags, InstallFlags, HaddockFlags)
 installAction (configFlags, _, installFlags, _) _ globalFlags
   | fromFlagOrDefault False (installOnly installFlags) = do
       let verbosity = fromFlagOrDefault normal (configVerbosity configFlags)
-      (_, config) <- loadConfigOrSandboxConfig verbosity globalFlags
+      load <- try (loadConfigOrSandboxConfig verbosity globalFlags)
+      let config = either (\(SomeException _) -> mempty) snd load
       distPref <- findSavedDistPref config (configDistPref configFlags)
       let setupOpts = defaultSetupScriptOptions { useDistPref = distPref }
       setupWrapper verbosity setupOpts Nothing installCommand (const mempty) []
@@ -901,7 +904,7 @@ haddockAction haddockFlags extraArgs globalFlags = do
       setupScriptOptions = defaultSetupScriptOptions { useDistPref = distPref }
   setupWrapper verbosity setupScriptOptions Nothing
     haddockCommand (const haddockFlags') extraArgs
-  when (fromFlagOrDefault False $ haddockForHackage haddockFlags) $ do
+  when (haddockForHackage haddockFlags == Flag True) $ do
     pkg <- fmap LBI.localPkgDescr (getPersistBuildConfig distPref)
     let dest = distPref </> name <.> "tar.gz"
         name = display (packageId pkg) ++ "-docs"
@@ -911,7 +914,8 @@ haddockAction haddockFlags extraArgs globalFlags = do
 
 cleanAction :: CleanFlags -> [String] -> Action
 cleanAction cleanFlags extraArgs globalFlags = do
-  (_, config) <- loadConfigOrSandboxConfig verbosity globalFlags
+  load <- try (loadConfigOrSandboxConfig verbosity globalFlags)
+  let config = either (\(SomeException _) -> mempty) snd load
   distPref <- findSavedDistPref config (cleanDistPref cleanFlags)
   let setupScriptOptions = defaultSetupScriptOptions
                            { useDistPref = distPref
@@ -1101,8 +1105,12 @@ uploadAction uploadFlags extraArgs globalFlags = do
               (file', ".gz") -> takeExtension file' == ".tar"
               _              -> False
     generateDocTarball config = do
-      notice verbosity
-        "No documentation tarball specified. Building documentation tarball..."
+      notice verbosity $
+        "No documentation tarball specified. "
+        ++ "Building a documentation tarball with default settings...\n"
+        ++ "If you need to customise Haddock options, "
+        ++ "run 'haddock --for-hackage' first "
+        ++ "to generate a documentation tarball."
       haddockAction (defaultHaddockFlags { haddockForHackage = Flag True })
                     [] globalFlags
       distPref <- findSavedDistPref config NoFlag
@@ -1144,7 +1152,8 @@ sdistAction (sdistFlags, sdistExFlags) extraArgs globalFlags = do
   unless (null extraArgs) $
     die $ "'sdist' doesn't take any extra arguments: " ++ unwords extraArgs
   let verbosity = fromFlag (sDistVerbosity sdistFlags)
-  (_, config) <- loadConfigOrSandboxConfig verbosity globalFlags
+  load <- try (loadConfigOrSandboxConfig verbosity globalFlags)
+  let config = either (\(SomeException _) -> mempty) snd load
   distPref <- findSavedDistPref config (sDistDistPref sdistFlags)
   let sdistFlags' = sdistFlags { sDistDistPref = toFlag distPref }
   sdist sdistFlags' sdistExFlags
@@ -1274,7 +1283,7 @@ userConfigAction ucflags extraArgs globalFlags = do
       path       <- configFile
       fileExists <- doesFileExist path
       if (not fileExists || (fileExists && force))
-      then createDefaultConfigFile verbosity path
+      then void $ createDefaultConfigFile verbosity path
       else die $ path ++ " already exists."
     ("diff":_) -> mapM_ putStrLn =<< userConfigDiff globalFlags
     ("update":_) -> userConfigUpdate verbosity globalFlags
